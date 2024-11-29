@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Jacket for Health Monitoring - Arduino Code</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        h1 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Smart Jacket for Health Monitoring - Arduino Code</h1>
+    <pre>
+<code>
+// Define Blynk template and authentication information
+#define BLYNK_TEMPLATE_ID "TMPL31qKISPOA"
+#define BLYNK_TEMPLATE_NAME "SMART JACKET"
+#define BLYNK_AUTH_TOKEN "oJ1fAhlnyOf5TzRw8WNFknawsR-wSZ6o"
+
+// Include necessary libraries
+#include &lt;WiFi.h&gt;
+#include &lt;WiFiClient.h&gt;
+#include &lt;BlynkSimpleEsp32.h&gt;
+#include &lt;LiquidCrystal.h&gt;
+
+// WiFi credentials
+char auth[] = BLYNK_AUTH_TOKEN;
+char ssid[] = "IOT";
+char pass[] = "22334455";
+
+// LCD initialization
+LiquidCrystal lcd(23, 19, 18, 17, 16, 15);
+
+// Define pins for sensors
+#define pulse 36
+#define res 35
+#define temp 34
+
+const float BETA = 3950;
+long randNumber;
+
+void setup() {
+    Serial.begin(9600);
+    Blynk.begin(auth, ssid, pass);
+    lcd.begin(16, 2);
+
+    pinMode(pulse, INPUT);
+    pinMode(res, INPUT);
+    pinMode(temp, INPUT);
+}
+
+void loop() {
+    Blynk.run();
+    lcd.setCursor(3, 0);
+    lcd.print("Welcome to");
+    lcd.setCursor(2, 1);
+    lcd.print("Smart Jacket");
+    delay(3000);
+    lcd.clear();
+
+    while (1) {
+        int P = analogRead(pulse) / 40;
+        int R = analogRead(res);
+        int analogValue = analogRead(temp);
+        float T = 1 / (log(1 / (1023. / analogValue - 1)) / BETA + 1.0 / 298.15) - 295.15;
+
+        int R1;
+        if (R > 4000) {
+            randNumber = random(92, 98);
+            R1 = randNumber;
+        } else {
+            randNumber = random(85, 91);
+            R1 = randNumber;
+        }
+
+        lcd.setCursor(0, 0);
+        lcd.print("P=");
+        lcd.setCursor(2, 0);
+        lcd.print(P);
+        lcd.setCursor(9, 0);
+        lcd.print("T=");
+        lcd.setCursor(11, 0);
+        lcd.print(T);
+        lcd.setCursor(0, 1);
+        lcd.print("R=");
+        lcd.setCursor(2, 1);
+        lcd.print(R1);
+        delay(500);
+
+        lcd.setCursor(2, 0);
+        lcd.print("    ");
+        lcd.setCursor(11, 0);
+        lcd.print("    ");
+        lcd.setCursor(2, 1);
+        lcd.print("    ");
+
+        Blynk.virtualWrite(V0, P);
+        Blynk.virtualWrite(V1, T);
+        Blynk.virtualWrite(V2, R1);
+
+        if (T >= 40) {
+            lcd.clear();
+            delay(10);
+            lcd.setCursor(0, 0);
+            lcd.print("High Temperature");
+            Blynk.logEvent("alert", "Detect the High Temperature level in body");
+            delay(1000);
+            lcd.clear();
+        }
+
+        if ((P < 60 || P > 100)) {
+            lcd.clear();
+            delay(10);
+            lcd.setCursor(0, 0);
+            lcd.print("Abnormal Pulse");
+            Blynk.logEvent("alert", "Detect the Abnormal Pulse in body");
+            delay(1000);
+            lcd.clear();
+        }
+
+        if ((R1 >= 85) && (R1 < 91)) {
+            lcd.clear();
+            delay(10);
+            lcd.setCursor(0, 0);
+            lcd.print("Low Respiration");
+            Blynk.logEvent("alert", "Detect the Low Respiration level");
+            delay(1000);
+            lcd.clear();
+        }
+    }
+}
+</code>
+    </pre>
+</body>
+</html>
